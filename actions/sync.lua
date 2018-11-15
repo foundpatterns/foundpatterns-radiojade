@@ -2,6 +2,31 @@ event: ["sync_requested"]
 priority: 50
 input_parameters: ["request"]
 
+local function send_document (fields, body)
+
+  local data = {}
+  data.model = fields.model
+  data.body = body or ""
+
+  for k, v in pairs(fields) do
+    data["field." .. k] = v
+  end
+
+  local response = send_request({
+    method = "POST",
+    uri = "http://localhost:3001",
+    headers = {
+      ["content-type"] = "application/json",
+    },
+    body = json.from_table(data)
+  })
+
+  -- Not OK Status
+  if response.status < 200 or response.status > 299 then
+    log.error("Couldn't send the document:\n\t" .. response.body_raw)
+  end
+end
+
 local last_sync_date
 local last_sync_id
 
@@ -46,6 +71,9 @@ end
 
 local sync_id = uuid.v4()
 content.write_file("home", sync_id, data)
+
+-- Testing the send function, it really shouldn't send the sync document
+send_document(data)
 
 data.uuid = sync_id
 
